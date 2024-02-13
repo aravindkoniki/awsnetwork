@@ -11,7 +11,7 @@ locals {
 
 # vpc module
 module "vpc" {
-  source                = "../../modules/vpc"
+  source                = "../vpc"
   vpc_name              = var.vpc_name
   cidr_block            = var.cidr_block
   secondary_cidr_blocks = var.secondary_cidr_blocks
@@ -22,7 +22,7 @@ module "vpc" {
 #module internet gateway
 module "igw" {
   count    = local.is_igw_deployed ? 1 : 0
-  source   = "../../modules/igw"
+  source   = "../igw"
   igw_name = var.igw_name
   vpc_id   = module.vpc.id
   tags     = merge({ "Name" = "${var.igw_name}" }, var.tags)
@@ -34,7 +34,7 @@ module "igw" {
 # nat gateway module
 module "nat_gateway" {
   for_each             = var.nat_gateways != null ? var.nat_gateways : {}
-  source               = "../../modules/ngw"
+  source               = "../ngw"
   nat_gateway_name     = var.nat_gateways["${each.key}"].name
   is_private           = lookup(var.nat_gateways["${each.key}"], "is_private", false)
   subnet_id            = lookup(var.nat_gateways["${each.key}"], "subnet_id", module.subnets.subnets_by_name[upper(var.nat_gateways["${each.key}"].subnet_name)].id)
@@ -50,7 +50,7 @@ module "nat_gateway" {
 
 # subnets module
 module "subnets" {
-  source  = "../../modules/subnets"
+  source  = "../subnets"
   vpc_id  = module.vpc.id
   subnets = var.subnets
   tags    = var.tags
@@ -62,7 +62,7 @@ module "subnets" {
 # nacl module
 module "nacl" {
   for_each      = var.subnets
-  source        = "../../modules/nacl"
+  source        = "../nacl"
   nacl_name     = var.subnets["${each.key}"]["nacl"].name
   vpc_id        = module.vpc.id
   subnets       = [lookup(var.subnets["${each.key}"], "subnet_id", module.subnets.subnets_by_name[upper(var.subnets["${each.key}"].name)].id)]
@@ -79,7 +79,7 @@ module "nacl" {
 # route table module
 module "route_table" {
   for_each         = var.subnets
-  source           = "../../modules/routetables"
+  source           = "../routetables"
   route_table_name = var.subnets["${each.key}"]["route_table"].name
   vpc_id           = module.vpc.id
   subnets          = [lookup(var.subnets["${each.key}"], "subnet_id", module.subnets.subnets_by_name[upper(var.subnets["${each.key}"].name)].id)]
