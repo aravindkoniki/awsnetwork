@@ -84,11 +84,16 @@ module "route_table" {
   vpc_id           = module.vpc.id
   subnets          = [lookup(var.subnets["${each.key}"], "subnet_id", module.subnets.subnets_by_name[upper(var.subnets["${each.key}"].name)].id)]
   ipv4_routes = concat(
-    var.create_igw == true && lookup(var.subnets["${each.key}"]["route_table"], "add_igw_routes", false) == true ? [
+    local.is_igw_deployed == true && lookup(var.subnets["${each.key}"]["route_table"], "igw_routes", null) != null ? [
       {
-        cidr_block = "0.0.0.0/0",
+        cidr_block = "${var.subnets["${each.key}"]["route_table"]["igw_routes"].cidr_block}",
         gateway_id = "${module.igw[0].id}"
-    }] : [],
+      }] : [],
+    local.is_nat_deployed ==true && lookup(var.subnets["${each.key}"]["route_table"], "ngw_routes", null) != null ?[
+      {
+        cidr_block = "${var.subnets["${each.key}"]["route_table"]["ngw_routes"].cidr_block}",
+        gateway_id = "${module.nat_gateway[var.subnets["${each.key}"]["route_table"]["ngw_routes"].ngw_key].id}"
+      }]:[],
     var.subnets["${each.key}"]["route_table"].ipv4_routes
   )
   gateways                 = lookup(var.subnets["${each.key}"]["route_table"], "gateways", [])
